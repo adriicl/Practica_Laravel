@@ -21,7 +21,7 @@ class AlumnoSeeder extends Seeder
                 "nombre" => fake()->name(),
                 "telefono" => fake()->numerify('##########'), // Teléfono aleatorio
                 "edad" => rand(18, 100), // Edad aleatoria entre 18 y 100
-                "password" => 'password' . $i, // Contraseña sin encriptar
+                "password" => 'password' . $i, // Contraseña
                 "email" => 'user' . $i . '@example.com', // Correo único con índice
                 "sexo" => fake()->randomElement($sexo), // Sexo aleatorio
             ]);
