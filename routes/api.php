@@ -19,19 +19,12 @@ Route::controller(AlumnoController::class)->prefix('/alumnos')->group(function (
     Route::get('/{id}', 'devolverId')->middleware(ValidarId::class); // Obtener un alumno por ID
 });
 
-// Grupo de rutas protegidas
-// Rutas protegidas
-Route::middleware([StartSession::class, CheckAuthenticated::class])->group(function () {
+Route::post('/login', [AuthController::class, 'login']);
+Route::get('/public', [AuthController::class, 'rutaPublica']);
+
+Route::middleware(CheckAuthenticated::class)->group(function () {
     Route::get('/user', [AuthController::class, 'getUser']);
     Route::post('/logout', [AuthController::class, 'logout']);
-});
-
-// Rutas públicas
-Route::middleware([StartSession::class])->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::get('/public', function () {
-        return 'Esta es una ruta pública.';
-    });
 });
 
 

@@ -1,24 +1,41 @@
 <?php
-
 namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Auth;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class CheckAuthenticated
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
-    public function handle(Request $request, Closure $next)
+    public function handle(Request $request, Closure $next): Response
     {
-        if (!Auth::check()) {
-            return response()->json(['message' => 'No está autenticado.'], 401);
+
+        $publicRoutes = ['/login', '/public'];
+
+        if (in_array($request->path(), $publicRoutes)) {
+            return $next($request);
         }
+        
+        $token = $request->bearerToken();
+
+        if (!$token) {
+            return response()->json(['message' => 'Token no proporcionado.'], 401);
+        }
+
+        $accessToken = PersonalAccessToken::findToken($token);
+
+        if (!$accessToken) {
+            return response()->json(['message' => 'Token inválido.'], 401);
+        }
+
+        $user = $accessToken->tokenable;
+
+        if (!$user) {
+            return response()->json(['message' => 'Usuario no encontrado.'], 401);
+        }
+
+        $request->setUserResolver(fn () => $user);
 
         return $next($request);
     }

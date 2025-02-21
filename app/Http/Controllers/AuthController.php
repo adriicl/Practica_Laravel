@@ -1,8 +1,11 @@
 <?php
+
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\User;
+use Laravel\Sanctum\PersonalAccessToken;
 
 class AuthController extends Controller
 {
@@ -10,36 +13,38 @@ class AuthController extends Controller
     {
         $credentials = $request->only('name', 'password');
 
-        if (Auth::attempt($credentials)) {
-            // Regenerar sesión solo si está habilitada
-            if ($request->hasSession()) {
-                $request->session()->regenerate();
-            }
-
-            return response()->json(['message' => 'Autenticación exitosa.']);
+        if ($request->user()) {
+            return response()->json(['message' => 'Ya estás autenticado.'], 200);
         }
 
-        return response()->json(['message' => 'Credenciales incorrectas.'], 401);
+        if (!Auth::attempt($credentials)) {
+            return response()->json(['message' => 'Credenciales incorrectas.'], 401);
+        }
+
+        $user = Auth::user();
+        $token = $user->createToken('auth_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'Autenticación exitosa.',
+            'user' => $user->name,
+            'token' => $token
+        ]);
     }
 
     public function logout(Request $request)
     {
-        Auth::logout();
-
-        if ($request->hasSession()) {
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-        }
+        $request->user()->tokens()->delete();
 
         return response()->json(['message' => 'Sesión cerrada correctamente.']);
     }
 
     public function getUser(Request $request)
     {
-        if (!Auth::check()) {
-            return response()->json(['message' => 'No está autenticado.'], 401);
-        }
+        return response()->json(['user' => $request->user()]);
+    }
 
-        return response()->json(['user' => Auth::user()]);
+    public function rutaPublica()
+    {
+        return response()->json(['message' => 'Ruta pública accesible sin autenticación']);
     }
 }
